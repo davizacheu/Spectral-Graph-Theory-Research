@@ -8,5 +8,5 @@ L = D - A
 Normalized L = D^(-1/2) LD^(-1/2) = I - D^(-1/2)AD^(-1/2) ~ I - D^(-1)A
 
 Question:
-If a graph has an equitable partition, cna we still create some sort of equility involving B or K
+If a graph has an equitable partition, can we still create some sort of equality involving B or K
 Q is the adjacency matrix for the condensed graph (weighted edges)
