@@ -3,7 +3,7 @@
     "python.analysis.extraPaths": [
         "/Applications/SageMath-10-0.app/Contents/Frameworks/Sage.framework/Versions/10.0/local/var/lib/sage/venv-python3.11.1/lib/python3.11/site-packages"
     ],
-    "python.analysis.include": [
-        "/Applications/SageMath-10-0.app/Contents/Frameworks/Sage.framework/Versions/10.0/local/var/lib/sage/venv-python3.11.1/lib/python3.11/site-packages"
-    ]
+    // "python.analysis.include": [
+    //     "/Applications/SageMath-10-0.app/Contents/Frameworks/Sage.framework/Versions/10.0/local/var/lib/sage/venv-python3.11.1/lib/python3.11/site-packages"
+    // ]
 }
