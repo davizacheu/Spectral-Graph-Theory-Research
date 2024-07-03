@@ -80,30 +80,45 @@ def add_simple_chain(graph_dict, start_vertex, end_vertex):
     
 def luke_graphs_gen(n):
     for array in all_binary_arrays_no_mirroring_gen(n - 3):
-        graph_dict = defaultdict(list)
+        graph_dict_left = defaultdict(list)
+        graph_dict_right = defaultdict(list)
 
         # Left X
-        add_X_edges_in_block_num(graph_dict, 0, n)
+        add_X_edges_in_block_num(graph_dict_left, 0, n)
+        add_X_edges_in_block_num(graph_dict_right, 0, n)
+
+        # Add vertical to the left of X
+        add_edge(graph_dict_left, 0, n)
         # Add vertical to the right of X
-        add_edge(graph_dict, 0, n)
+        add_edge(graph_dict_right, 1, n + 1)
 
         # Right X
-        add_X_edges_in_block_num(graph_dict, n - 2, n)
+        add_X_edges_in_block_num(graph_dict_left, n - 2, n)
+        add_X_edges_in_block_num(graph_dict_right, n - 2, n)
+
+        # Add vertical to the left of X
+        add_edge(graph_dict_left, n - 2, 2*n - 2)
         # Add vertical to the right of X
-        add_edge(graph_dict, n - 2, 2*n - 2)
+        add_edge(graph_dict_right, n - 1, 2*n - 1)
 
         # Add top chain
-        add_simple_chain(graph_dict, 0, n - 1)
+        add_simple_chain(graph_dict_left, 0, n - 1)
+        add_simple_chain(graph_dict_right, 0, n - 1)
 
         # Add bottom chain
-        add_simple_chain(graph_dict, n, 2*n - 1)
+        add_simple_chain(graph_dict_left, n, 2*n - 1)
+        add_simple_chain(graph_dict_right, n, 2*n - 1)
 
         for i in range(len(array)):
             if array[i] == 1:
                 # Add X
-                add_X_edges_in_block_num(graph_dict, i + 1, n)
-                # Add vertical to the right of X
-                add_edge(graph_dict, i + 1, i + 1 + n)
+                add_X_edges_in_block_num(graph_dict_left, i + 1, n)
+                add_X_edges_in_block_num(graph_dict_right, i + 1, n)
 
-        yield graph_dict
+                # Add vertical to the left of X
+                add_edge(graph_dict_left, i + 1, i + 1 + n)
+                # Add vertical to the right of X
+                add_edge(graph_dict_right, i + 2, i + 2 + n)
+
+        yield (graph_dict_left, graph_dict_right)
 
