@@ -78,7 +78,7 @@ def add_simple_chain(graph_dict, start_vertex, end_vertex):
     for i in range(start_vertex, end_vertex):
         add_edge(graph_dict, i, i + 1)
     
-def luke_graphs_gen(n):
+def xo_graphs_gen(n):
     for array in all_binary_arrays_no_mirroring_gen(n - 3):
         graph_dict_left = defaultdict(list)
         graph_dict_right = defaultdict(list)
@@ -122,3 +122,12 @@ def luke_graphs_gen(n):
 
         yield (graph_dict_left, graph_dict_right)
 
+def obtain_positions_for_xo_graph(luke_graph_dict):
+    positions = {}
+    for v in range(len(luke_graph_dict) // 2):
+        positions[v] = (v, 1)
+    x = 0
+    for v in range(len(luke_graph_dict) // 2, len(luke_graph_dict)):
+        positions[v] = (x, 0)
+        x += 1
+    return positions
