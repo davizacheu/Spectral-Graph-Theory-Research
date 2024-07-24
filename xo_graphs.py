@@ -3,7 +3,7 @@ from collections import deque
 from binary_arrays_for_xo_graphs import all_binary_arrays_no_mirroring_gen
 from xo_graph_helper_functions import *
     
-def xo_graphs_gen(n, isAlternating=False):
+def xo_dicts_gen(n, isAlternating=True):
     if isAlternating:
         x_gap = 2
         v_gap = 1
@@ -44,7 +44,7 @@ def xo_graphs_gen(n, isAlternating=False):
                 # Add vertical to the right of X
                 add_edge(graph_dict_right, (i + 1)*step, (i + 1)*step + v_gap)
 
-        yield (graph_dict_left, graph_dict_right)
+        yield (graph_dict_left, graph_dict_right, array)
 
 def obtain_positions_for_xo_graph(luke_graph_dict, isAlternating=False):
     if isAlternating:
