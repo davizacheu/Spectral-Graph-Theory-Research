@@ -46,7 +46,7 @@ def xo_dicts_gen(n, isAlternating=True):
 
         yield (graph_dict_left, graph_dict_right, array)
 
-def obtain_positions_for_xo_graph(luke_graph_dict, isAlternating=False):
+def obtain_positions_for_xo_graph(luke_graph_dict, isAlternating=True):
     if isAlternating:
         step = 2
     else:
