@@ -1,10 +1,11 @@
-from sage.matrix.special import block_matrix, ones_matrix
+from sage.matrix.special import block_matrix, ones_matrix, identity_matrix, diagonal_matrix
 from sage.graphs.graph import Graph
-from sage.all import Matrix
-from sage.all import QQ
+from sage.all import Matrix, matrix
+from sage.all import QQ, QQbar
 from xo_graphs import xo_dicts_gen
 from xo_graphs import obtain_positions_for_xo_graph
-
+import itertools
+from concurrent.futures import ThreadPoolExecutor
 
 def xo_graphs_and_similarity_matrix_gen(n, similarity_matrix_constructor, isAlternating=True):
     xo_dict_pairs = xo_dicts_gen(n, isAlternating)
@@ -50,3 +51,106 @@ def laplacian_similarity_matrix_for_xo_graphs_alternating_labels(xo_array):
             c_index = 0
             o_count += 1
     return block_matrix(block_arr)
+
+def check_combination(tup):
+    """
+    The function that will run in worker processes.
+    `tup` should be (combination, target_l_small, target_r_small).
+    """
+    combination, target_l_small, target_r_small = tup
+    sim_candidate = block_matrix(4, 4, list(combination))
+    if target_l_small * sim_candidate == sim_candidate * target_r_small:
+        return sim_candidate  # Found a valid candidate
+    return None
+
+def brute_force_correct_corner_blocks(target_l, target_r):
+    """
+    Example showing how to use a generator + ProcessPoolExecutor to
+    avoid building an enormous list in memory.
+    """
+
+    # ---------------------------------------------------------------
+    # 1) Reduce target_l, target_r to 4×4 block-matrices as you do now
+    # ---------------------------------------------------------------
+    def extract_block(matrix, row_start, col_start):
+        return matrix.submatrix(row_start, col_start, 2, 2)
+    
+    positions = [(i, j) for i in [0, 8, 10, 18] for j in [0, 8, 10, 18]]
+    blocks_l = [extract_block(target_l, row, col) for row, col in positions]
+    blocks_r = [extract_block(target_r, row, col) for row, col in positions]
+    target_l_small = block_matrix(4, 4, blocks_l)
+    target_r_small = block_matrix(4, 4, blocks_r)
+    print(f'target_l_small \n')
+    print(target_l_small)
+    print(f'target_r_small \n')
+    print(target_r_small)
+
+    # ---------------------------------------------------------------
+    # 2) Define the 5 possible 2×2 blocks
+    # ---------------------------------------------------------------
+    I = identity_matrix(2)
+    J = ones_matrix(2)
+    O = Matrix(2)
+    A = J * (1/2)
+    B = J * (-1/2) + I
+    possible_matrices = [A, -A, B, -B, O]
+
+    # ---------------------------------------------------------------
+    # 3) Create a generator of all possible 16-block combinations
+    #    *without* converting to a huge list
+    # ---------------------------------------------------------------
+    all_combinations = itertools.product(possible_matrices, repeat=16)
+
+    # ---------------------------------------------------------------
+    # 4) Submit these tasks in parallel using ProcessPoolExecutor
+    # ---------------------------------------------------------------
+    # Using executor.map(...) consumes the generator on-the-fly
+    # and returns an iterator of results in the same order.
+    with ThreadPoolExecutor() as executor:
+        # Map each combination to (combination, target_l_small, target_r_small)
+        futures = []
+        # so check_combination() knows what to do.
+        step = 1
+        for combination in all_combinations:
+            print(f'combination: {step}')
+            f = executor.submit(check_combination, (combination, target_l_small, target_r_small))
+            futures.append(f)
+            step += 1
+        for f in futures:
+            sim_candidate = f.result()
+            if sim_candidate is not None:
+                print("Sim candidate found!")
+                print(sim_candidate)
+
+def find_ihara_similarity(n):
+    """ Returns Ihara Matrix of G """
+
+    """ Returns the degree matrix D of graph G"""
+    def deg_matrix(G):
+        return diagonal_matrix([G.degree(v) for v in G.vertices(sort=True)], sparse=False)
+    
+    def ihara_matrix(G):
+        A = G.adjacency_matrix()
+        D = deg_matrix(G)
+        I = identity_matrix(G.order())
+        Z = matrix.zero(G.order())
+        return block_matrix(QQbar, [[A, D-I], [-I, Z]], subdivide=False)
+    
+    graph_pairs_and_sim_matrix = xo_graphs_and_similarity_matrix_gen(
+        n, laplacian_similarity_matrix_for_xo_graphs_alternating_labels
+        )
+    
+    for graph_left_and_pos, graph_right_and_pos, similarity_matrix in graph_pairs_and_sim_matrix:
+        graph_left, pos_left = graph_left_and_pos
+        graph_right, pos_right = graph_right_and_pos
+
+        target_l = ihara_matrix(graph_left)
+        target_r = ihara_matrix(graph_right)
+        print('target_l = ')
+        print(target_l)
+        print('target_r= ')
+        print(target_r)
+    
+        brute_force_correct_corner_blocks(target_l, target_r)
+
+find_ihara_similarity(5)
