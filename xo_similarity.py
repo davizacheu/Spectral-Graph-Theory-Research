@@ -1,7 +1,15 @@
-from sage.matrix.special import block_matrix, ones_matrix, identity_matrix, diagonal_matrix
-from sage.graphs.graph import Graph
-from sage.all import Matrix, matrix
-from sage.all import QQ, QQbar
+from sage.all import (
+    block_matrix, 
+    ones_matrix, 
+    identity_matrix, 
+    diagonal_matrix, 
+    matrix,
+    Matrix, 
+    Graph, 
+    QQ, 
+    QQbar
+)
+
 from xo_graphs import xo_dicts_gen
 from xo_graphs import obtain_positions_for_xo_graph
 import itertools
