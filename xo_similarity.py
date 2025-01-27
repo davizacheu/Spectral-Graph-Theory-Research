@@ -1,3 +1,6 @@
+import sys
+
+from torch import combinations
 from sage.all import (
     block_matrix, 
     ones_matrix, 
@@ -7,13 +10,15 @@ from sage.all import (
     Matrix, 
     Graph, 
     QQ, 
-    QQbar
+    QQbar,
+    copy
 )
 
 from xo_graphs import xo_dicts_gen
 from xo_graphs import obtain_positions_for_xo_graph
 import itertools
 from concurrent.futures import ThreadPoolExecutor
+import os
 
 def xo_graphs_and_similarity_matrix_gen(n, similarity_matrix_constructor, isAlternating=True):
     xo_dict_pairs = xo_dicts_gen(n, isAlternating)
@@ -58,18 +63,32 @@ def laplacian_similarity_matrix_for_xo_graphs_alternating_labels(xo_array):
                 c_index = (c_index + 1) % 2
             c_index = 0
             o_count += 1
-    return block_matrix(block_arr)
+    return block_matrix(QQ, block_arr)
+
+I = identity_matrix(2)
+J = ones_matrix(2)
+O = Matrix(2)
+A = J * (1/2)
+B = J * (-1/2) + I
 
 def check_combination(tup):
     """
     The function that will run in worker processes.
     `tup` should be (combination, target_l_small, target_r_small).
     """
+
     combination, target_l_small, target_r_small = tup
-    sim_candidate = block_matrix(4, 4, list(combination))
-    if target_l_small * sim_candidate == sim_candidate * target_r_small:
-        return sim_candidate  # Found a valid candidate
-    return None
+    
+    s_1 = block_matrix(2,2, combination[:4])
+    s_3 = block_matrix(2,2, combination[4:])
+    s_4 = s_1 + s_3*block_matrix(2,2, [O,O,O,J - I])
+    s_2 = (-1)*s_3*block_matrix(2,2, [I,O,O, 2*I])
+    sim_candidate = block_matrix(QQ, 2, 2,
+                                 [s_1,s_2,
+                                  s_3,s_4])
+    left_result = target_l_small * sim_candidate
+    rigth_result = sim_candidate * target_r_small
+    return left_result, rigth_result, sim_candidate
 
 def brute_force_correct_corner_blocks(target_l, target_r):
     """
@@ -86,28 +105,64 @@ def brute_force_correct_corner_blocks(target_l, target_r):
     positions = [(i, j) for i in [0, 8, 10, 18] for j in [0, 8, 10, 18]]
     blocks_l = [extract_block(target_l, row, col) for row, col in positions]
     blocks_r = [extract_block(target_r, row, col) for row, col in positions]
-    target_l_small = block_matrix(4, 4, blocks_l)
-    target_r_small = block_matrix(4, 4, blocks_r)
+    target_l_small = block_matrix(QQ, 4, 4, blocks_l)
+    target_r_small = block_matrix(QQ, 4, 4, blocks_r)
     print(f'target_l_small \n')
     print(target_l_small)
     print(f'target_r_small \n')
     print(target_r_small)
 
+    # target_l_second_quadrant = target_l.submatrix(0, 0, 10, 10)
+    # target_r_second_quadrant = target_r.submatrix(0, 0, 10, 10)
+
+    # print('target_l_second_quadrant')
+    # print(target_l_second_quadrant)
+    # print('target_r_second_quadrant')
+    # print(target_r_second_quadrant)
+ 
+    # similar, P = target_l_small.is_similar(target_r_small, transformation= True)
+    # print( 'Are they similar? ', similar)
+    # if similar:
+    #     P = P.change_ring(QQ)
+    #     P_inv = P.inverse()
+    #     print('P')
+    #     print(P)
+    #     print('P inverse')
+    #     print(P_inv)
+
+    # sim_candidate = block_matrix(4,4, [
+    #     [A,O,O,O],
+    #     [O,A,O,O],
+    #     [O,O,B,O],
+    #     [O,O,O,B]
+
+    # ])
+    # print('sim_candidate')
+    # print(sim_candidate)
+    # left_result = (target_l_small * sim_candidate).change_ring(QQ)
+    # rigth_result = (sim_candidate * target_r_small).change_ring(QQ)
+    # print('left_result')
+    # print(left_result)
+    
+    # print('right_result')
+    # print(rigth_result)
+
+    # if left_result == rigth_result:
+    #     print("Sim candidate found!")
+        
+        
+
     # ---------------------------------------------------------------
     # 2) Define the 5 possible 2×2 blocks
     # ---------------------------------------------------------------
-    I = identity_matrix(2)
-    J = ones_matrix(2)
-    O = Matrix(2)
-    A = J * (1/2)
-    B = J * (-1/2) + I
+    
     possible_matrices = [A, -A, B, -B, O]
 
     # ---------------------------------------------------------------
     # 3) Create a generator of all possible 16-block combinations
     #    *without* converting to a huge list
     # ---------------------------------------------------------------
-    all_combinations = itertools.product(possible_matrices, repeat=16)
+    flexible_blocks = itertools.product(possible_matrices, repeat=8)
 
     # ---------------------------------------------------------------
     # 4) Submit these tasks in parallel using ProcessPoolExecutor
@@ -115,20 +170,22 @@ def brute_force_correct_corner_blocks(target_l, target_r):
     # Using executor.map(...) consumes the generator on-the-fly
     # and returns an iterator of results in the same order.
     with ThreadPoolExecutor() as executor:
+        print(f'PID: {os.getpid()}') 
         # Map each combination to (combination, target_l_small, target_r_small)
         futures = []
         # so check_combination() knows what to do.
         step = 1
-        for combination in all_combinations:
-            print(f'combination: {step}')
+        for combination in flexible_blocks:
+            if step % 10000 == 0: print(f'combination: {step}')
             f = executor.submit(check_combination, (combination, target_l_small, target_r_small))
             futures.append(f)
             step += 1
         for f in futures:
-            sim_candidate = f.result()
-            if sim_candidate is not None:
+            left_result, rigth_result, sim_candidate = f.result()
+            if left_result == rigth_result:
                 print("Sim candidate found!")
                 print(sim_candidate)
+
 
 def find_ihara_similarity(n):
     """ Returns Ihara Matrix of G """
@@ -158,7 +215,11 @@ def find_ihara_similarity(n):
         print(target_l)
         print('target_r= ')
         print(target_r)
+        print('similarity_matrix')
+        print(similarity_matrix)
     
         brute_force_correct_corner_blocks(target_l, target_r)
 
-find_ihara_similarity(5)
+with open('xo_ihara_similarity_corners.txt', 'w') as f:
+    sys.stdout = f  # Redirect standard output to the file
+    find_ihara_similarity(5)
