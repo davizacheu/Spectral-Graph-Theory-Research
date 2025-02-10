@@ -1,6 +1,3 @@
-import sys
-
-from torch import combinations
 from sage.all import (
     block_matrix, 
     ones_matrix, 
@@ -111,45 +108,6 @@ def brute_force_correct_corner_blocks(target_l, target_r):
     print(target_l_small)
     print(f'target_r_small \n')
     print(target_r_small)
-
-    # target_l_second_quadrant = target_l.submatrix(0, 0, 10, 10)
-    # target_r_second_quadrant = target_r.submatrix(0, 0, 10, 10)
-
-    # print('target_l_second_quadrant')
-    # print(target_l_second_quadrant)
-    # print('target_r_second_quadrant')
-    # print(target_r_second_quadrant)
- 
-    # similar, P = target_l_small.is_similar(target_r_small, transformation= True)
-    # print( 'Are they similar? ', similar)
-    # if similar:
-    #     P = P.change_ring(QQ)
-    #     P_inv = P.inverse()
-    #     print('P')
-    #     print(P)
-    #     print('P inverse')
-    #     print(P_inv)
-
-    # sim_candidate = block_matrix(4,4, [
-    #     [A,O,O,O],
-    #     [O,A,O,O],
-    #     [O,O,B,O],
-    #     [O,O,O,B]
-
-    # ])
-    # print('sim_candidate')
-    # print(sim_candidate)
-    # left_result = (target_l_small * sim_candidate).change_ring(QQ)
-    # rigth_result = (sim_candidate * target_r_small).change_ring(QQ)
-    # print('left_result')
-    # print(left_result)
-    
-    # print('right_result')
-    # print(rigth_result)
-
-    # if left_result == rigth_result:
-    #     print("Sim candidate found!")
-        
         
 
     # ---------------------------------------------------------------
@@ -220,6 +178,3 @@ def find_ihara_similarity(n):
     
         brute_force_correct_corner_blocks(target_l, target_r)
 
-with open('xo_ihara_similarity_corners.txt', 'w') as f:
-    sys.stdout = f  # Redirect standard output to the file
-    find_ihara_similarity(5)
