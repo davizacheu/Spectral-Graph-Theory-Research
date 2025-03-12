@@ -1,4 +1,4 @@
-# Graph Cospectrality Analysis Project
+# Graph Cospectrality Analysis Research
 
 A Python/SageMath project focused on studying cospectral graphs and their properties, with particular emphasis on the non-backtracking (Ihara) matrix.
 
