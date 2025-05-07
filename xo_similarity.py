@@ -144,37 +144,3 @@ def brute_force_correct_corner_blocks(target_l, target_r):
                 print("Sim candidate found!")
                 print(sim_candidate)
 
-
-def find_ihara_similarity(n):
-    """ Returns Ihara Matrix of G """
-
-    """ Returns the degree matrix D of graph G"""
-    def deg_matrix(G):
-        return diagonal_matrix([G.degree(v) for v in G.vertices(sort=True)], sparse=False)
-    
-    def ihara_matrix(G):
-        A = G.adjacency_matrix()
-        D = deg_matrix(G)
-        I = identity_matrix(G.order())
-        Z = matrix.zero(G.order())
-        return block_matrix(QQbar, [[A, D-I], [-I, Z]], subdivide=False)
-    
-    graph_pairs_and_sim_matrix = xo_graphs_and_similarity_matrix_gen(
-        n, laplacian_similarity_matrix_for_xo_graphs_alternating_labels
-        )
-    
-    for graph_left_and_pos, graph_right_and_pos, similarity_matrix in graph_pairs_and_sim_matrix:
-        graph_left, pos_left = graph_left_and_pos
-        graph_right, pos_right = graph_right_and_pos
-
-        target_l = ihara_matrix(graph_left)
-        target_r = ihara_matrix(graph_right)
-        print('target_l = ')
-        print(target_l)
-        print('target_r= ')
-        print(target_r)
-        print('similarity_matrix')
-        print(similarity_matrix)
-    
-        brute_force_correct_corner_blocks(target_l, target_r)
-
